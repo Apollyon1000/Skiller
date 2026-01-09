@@ -30,3 +30,19 @@ html, body {
   width: 100%;
   height: 100%;
 }
+
+.node {
+  position: absolute;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  user-select: none;
+  font-size: 14px;
+  text-align: center;
+}
+
+.node:active {
+  cursor: grabbing;
+}
