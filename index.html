@@ -7,37 +7,46 @@
 </head>
 <body>
 
-  <div id="viewport">
-    <svg id="connections"></svg>
-    <div id="nodes"></div>
-  </div>
+<div id="viewport">
+    <div id="node-editor" class="hidden">
+  <h3>Node Editor</h3>
 
-  <script src="script.js"></script>
+  <label>
+    Title
+    <input type="text" id="edit-title" />
+  </label>
 
-  <div id="node-editor" class="hidden">
-  <h2>Edit Node</h2>
   <label>
-    Title:<br>
-    <input type="text" id="node-title">
+    Color
+    <input type="color" id="edit-color" />
   </label>
+
   <label>
-    Description:<br>
-    <textarea id="node-desc"></textarea>
+    Size
+    <input type="range" id="edit-size" min="40" max="160" step="10" />
   </label>
+
   <label>
-    Color:<br>
-    <input type="color" id="node-color">
-  </label>
-  <label>
-    Size:<br>
-    <input type="number" id="node-size" min="20" max="200">
-  </label>
-  <label>
-    Image:<br>
-    <input type="file" id="node-image" accept="image/*">
-  </label>
+  Icon Image
+  <input type="file" id="edit-image" accept="image/*" />
+</label>
+
+<label>
+  Shape
+  <select id="edit-shape">
+    <option value="circle">Circle</option>
+    <option value="square">Square</option>
+    <option value="hex">Hex</option>
+  </select>
+</label>
+
   <button id="close-editor">Close</button>
 </div>
+    <svg id="connections"></svg>
+    <div id="nodes"></div>
+</div>
+
+  <script src="script.js"></script>
 
 </body>
 </html>

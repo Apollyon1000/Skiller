@@ -10,6 +10,16 @@ let skillTree = {
 
 let nodeCounter = 0;
 
+let editingNodeId = null;
+
+const editor = document.getElementById("node-editor");
+const editTitle = document.getElementById("edit-title");
+const editColor = document.getElementById("edit-color");
+const editSize = document.getElementById("edit-size");
+const closeEditorBtn = document.getElementById("close-editor");
+const editImage = document.getElementById("edit-image");
+const editShape = document.getElementById("edit-shape");
+
 // Snap a value to grid
 function snap(value) {
   return Math.round(value / GRID_SIZE) * GRID_SIZE;
@@ -21,17 +31,19 @@ const nodesContainer = document.getElementById("nodes");
 function createNode(x, y) {
   const id = `node-${nodeCounter++}`;
 
-  const nodeData = {
-    id,
-    x: snap(x) - 40,
-    y: snap(y) - 40,
-    size: 80,
-    color: "#4CAF50",
-    title: "New Skill",
-    description: "",
-    unlocked: false,
-    prerequisites: []
-  };
+const nodeData = {
+  id,
+  x: snap(x) - 40,
+  y: snap(y) - 40,
+  size: 80,
+  color: "#4CAF50",
+  title: "New Skill",
+  description: "",
+  image: null,
+  shape: "circle",
+  unlocked: false,
+  prerequisites: []
+};
 
   skillTree.nodes[id] = nodeData;
 
@@ -41,6 +53,7 @@ function createNode(x, y) {
 function renderNode(node) {
   const el = document.createElement("div");
   el.className = "node";
+  el.classList.add(node.shape);
   el.dataset.id = node.id;
 
   el.style.width = `${node.size}px`;
@@ -49,7 +62,19 @@ function renderNode(node) {
   el.style.left = `${node.x}px`;
   el.style.top = `${node.y}px`;
 
-  el.innerText = node.title;
+const icon = document.createElement("div");
+icon.className = "node-icon";
+
+if (node.image) {
+  icon.style.backgroundImage = `url(${node.image})`;
+}
+
+const title = document.createElement("div");
+title.className = "node-title";
+title.innerText = node.title;
+
+el.appendChild(icon);
+el.appendChild(title);
 
   makeDraggable(el);
 
@@ -205,82 +230,104 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-// vvv NODE EDITOR vvv
-
-// Node Editor Elements
-const editor = document.getElementById("node-editor");
-const inputTitle = document.getElementById("node-title");
-const inputDesc = document.getElementById("node-desc");
-const inputColor = document.getElementById("node-color");
-const inputSize = document.getElementById("node-size");
-const inputImage = document.getElementById("node-image");
-const btnClose = document.getElementById("close-editor");
-
-let editingNodeId = null;
-
-// Open editor for a node
-function openNodeEditor(nodeId) {
-  const node = skillTree.nodes[nodeId];
+function openNodeEditor(id) {
+  const node = skillTree.nodes[id];
   if (!node) return;
 
-  editingNodeId = nodeId;
+  editingNodeId = id;
 
-  inputTitle.value = node.title;
-  inputDesc.value = node.description;
-  inputColor.value = node.color;
-  inputSize.value = node.size;
-  inputImage.value = ""; // reset file input
+  editTitle.value = node.title;
+  editColor.value = node.color;
+  editSize.value = node.size;
 
   editor.classList.remove("hidden");
+
+  editImage.value = "";
+  editShape.value = node.shape;
 }
 
-// Close editor
-btnClose.addEventListener("click", () => {
-  editor.classList.add("hidden");
-  editingNodeId = null;
-});
-
-// Sync changes
-inputTitle.addEventListener("input", () => {
-  if (!editingNodeId) return;
+editTitle.addEventListener("input", () => {
   const node = skillTree.nodes[editingNodeId];
-  node.title = inputTitle.value;
-  document.querySelector(`.node[data-id="${editingNodeId}"]`).innerText = node.title;
-});
+  if (!node) return;
 
-inputDesc.addEventListener("input", () => {
-  if (!editingNodeId) return;
-  skillTree.nodes[editingNodeId].description = inputDesc.value;
-});
+  node.title = editTitle.value;
 
-inputColor.addEventListener("input", () => {
-  if (!editingNodeId) return;
-  const node = skillTree.nodes[editingNodeId];
-  node.color = inputColor.value;
-  document.querySelector(`.node[data-id="${editingNodeId}"]`).style.background = node.color;
-});
-
-inputSize.addEventListener("input", () => {
-  if (!editingNodeId) return;
-  const node = skillTree.nodes[editingNodeId];
-  node.size = parseInt(inputSize.value);
   const el = document.querySelector(`.node[data-id="${editingNodeId}"]`);
+if (el) {
+  const titleEl = el.querySelector(".node-title");
+  if (titleEl) titleEl.innerText = node.title;
+}
+});
+
+editColor.addEventListener("input", () => {
+  const node = skillTree.nodes[editingNodeId];
+  if (!node) return;
+
+  node.color = editColor.value;
+
+  const el = document.querySelector(`.node[data-id="${editingNodeId}"]`);
+  if (el) el.style.background = node.color;
+});
+
+editSize.addEventListener("input", () => {
+  const node = skillTree.nodes[editingNodeId];
+  if (!node) return;
+
+  node.size = parseInt(editSize.value, 10);
+
+  const el = document.querySelector(`.node[data-id="${editingNodeId}"]`);
+  if (!el) return;
+
   el.style.width = `${node.size}px`;
   el.style.height = `${node.size}px`;
+
+  renderConnections();
 });
 
-inputImage.addEventListener("change", (e) => {
-  if (!editingNodeId) return;
-  const file = e.target.files[0];
-  if (!file) return;
+function closeEditor() {
+  editor.classList.add("hidden");
+  editingNodeId = null;
+}
+
+closeEditorBtn.addEventListener("click", closeEditor);
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    closeEditor();
+  }
+});
+
+editImage.addEventListener("change", () => {
+  const file = editImage.files[0];
+  if (!file || !editingNodeId) return;
+
   const reader = new FileReader();
+
   reader.onload = () => {
-    skillTree.nodes[editingNodeId].image = reader.result;
+    const node = skillTree.nodes[editingNodeId];
+    node.image = reader.result;
 
     const el = document.querySelector(`.node[data-id="${editingNodeId}"]`);
-    el.style.backgroundImage = `url(${reader.result})`;
-    el.style.backgroundSize = "cover";
-    el.style.backgroundPosition = "center";
+    if (!el) return;
+
+    const icon = el.querySelector(".node-icon");
+    if (icon) {
+      icon.style.backgroundImage = `url(${node.image})`;
+    }
   };
+
   reader.readAsDataURL(file);
+});
+
+editShape.addEventListener("change", () => {
+  const node = skillTree.nodes[editingNodeId];
+  if (!node) return;
+
+  node.shape = editShape.value;
+
+  const el = document.querySelector(`.node[data-id="${editingNodeId}"]`);
+  if (!el) return;
+
+  el.classList.remove("circle", "square", "hex");
+  el.classList.add(node.shape);
 });
